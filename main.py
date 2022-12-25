@@ -6,16 +6,18 @@ from pprint import pprint
 
 if __name__ == "__main__":
 
-    bot = ChatBot()
+    my_id = 14783152                     # ВРЕМЕННО
+    my_wife = 35384195                     # ВРЕМЕННО
+    many_photos = 984334                    # ВРЕМЕННО профиль где много фоток
+
+
     print("start**************")                          # ВРЕМЕННО
-    search_criterion = bot.listen()
+    #bot = ChatBot()
+    #search_criterion = bot.listen()
+ 
 
-    pprint(search_criterion)                         # ВРЕМЕННО
-
-    
-'''
     search_criterion = {                          # ВРЕМЕННО
-                        "hometown": "Уфа",
+                        "hometown": "Абакан",
                         "sex": 2,
                         "age_from": 26,
                         "age_to": 35
@@ -24,8 +26,8 @@ if __name__ == "__main__":
 
     
     searcher = SearchEngine(search_criterion)
-    searcher.start_search()
+    search_result = searcher.search()
 
-    searcher.print()                           # ВРЕМЕННО
+    pprint(search_result)                           # ВРЕМЕННО
     print("finish-----------")                          # ВРЕМЕННО
-'''
+
