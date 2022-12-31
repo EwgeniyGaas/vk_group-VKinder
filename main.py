@@ -12,22 +12,23 @@ if __name__ == "__main__":
 
 
     print("start**************")                          # ВРЕМЕННО
-    #bot = ChatBot()
-    #search_criterion = bot.listen()
+    bot = ChatBot()
+    search_criterion = bot.listen()
  
 
-    search_criterion = {                          # ВРЕМЕННО
+    '''search_criterion = {                          # ВРЕМЕННО
                         "hometown": "Абакан",
                         "sex": 2,
                         "age_from": 26,
                         "age_to": 35
-                        }
-
-
+                        }'''
     
-    searcher = SearchEngine(search_criterion)
-    search_result = searcher.search()
-
-    pprint(search_result)                           # ВРЕМЕННО
-    print("finish-----------")                          # ВРЕМЕННО
+    offset = 0 # сдвиг поиска, чтобы рез-ы не повторялись
+    
+    while True:
+        searcher = SearchEngine(search_criterion, offset)
+        search_result = searcher.search()
+        pprint(search_result)                           # ВРЕМЕННО
+        bot.present_results(search_result)
+        offset += 10
 

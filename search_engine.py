@@ -1,7 +1,7 @@
 import vk_api
+from chat_bot import ChatBot
 from datetime import *   # используется в методе self.get_age()
 
-from pprint import pprint                           # ВРЕМЕННО
 
 class SearchEngine:
     '''
@@ -15,7 +15,7 @@ class SearchEngine:
                     # при втором вызове данные из первого вызова стёрлись бы.
         
 
-    def __init__(self, search_criterion):
+    def __init__(self, search_criterion, offset):
         '''
         формирует параметры поиска аккаунтов Вк, на основе входных данных полученных от чат бота:
         search_criterion = {
@@ -31,11 +31,15 @@ class SearchEngine:
         self.vk = vk_api.VkApi(token=self.token)
 
         self.params["count"] = 10  # кол-во аккаунтов сколько надо найти
-        self.params["offset"] = 0  # сдвиг поиска, чтобы рез-ы не повторялись
+        self.params["offset"] = offset  # сдвиг поиска, чтобы рез-ы не повторялись
         self.params["status"] = 6   # 6 - в активном поиске
         self.params["online"] = 1   # 1 - online, 0 - всех
         self.params["has_photo"] = 1  # 1 - с фото, 0 - всех
         self.params["fields"] = "bdate" # дата рождения владельца аккаунта
+        bot = ChatBot()
+        bot.send_message("Мы ищем подходящие варианты. Нужно чуть-чуть подождать.")
+
+        
        
 
     def get_age(self, bdate_str: str) -> int:
@@ -87,7 +91,7 @@ class SearchEngine:
         Выбирает три фотографии с максимальным рейтингом, возвращает список их id
         -> [111111111, 222222222, 333333333]
         '''
-        three_photos = [0, 0, 0] # три фотки для показа юзеру
+        three_photos = [0, 0, 0]
         rating_buffer = [0, 0, 0]
         for photo in self.photos:
             if photo["rating"] > min(rating_buffer):
