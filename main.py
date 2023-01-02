@@ -2,7 +2,7 @@ from chat_bot import ChatBot
 from data_base import DataBase
 from search_engine import SearchEngine
 
-from pprint import pprint
+from pprint import pprint                   # ВРЕМЕННО
 
 
 if __name__ == "__main__":
@@ -25,11 +25,12 @@ if __name__ == "__main__":
                         }'''
     
     offset = 0 # сдвиг поиска, чтобы рез-ы не повторялись
+    count = 10 # кол-во акк-ов в рез-ах == увеличение offset
     
     while True:
-        searcher = SearchEngine(search_criterion, offset, user)
+        searcher = SearchEngine(search_criterion, offset, count, user)
         search_result = searcher.search()
         pprint(search_result)                           # ВРЕМЕННО
         bot.present_results(search_result)
-        offset += 10
+        offset += count
 

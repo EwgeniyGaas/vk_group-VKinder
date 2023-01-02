@@ -4,6 +4,7 @@ from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from random import randrange
 from time import sleep
 from data_base import DataBase
+from config import group_token
 
 
 class ChatBot:
@@ -24,9 +25,7 @@ class ChatBot:
 
     
     def __init__(self, user):
-        with open("group_token.txt", 'r') as file:
-            self.token = file.read().strip()
-        self.vk = vk_api.VkApi(token=self.token)
+        self.vk = vk_api.VkApi(token=group_token)
         self.longpoll = VkLongPoll(self.vk)
         self.user = user # class DataBase
  
@@ -189,33 +188,32 @@ class ChatBot:
         next_person = "Следующий"
                 
         for person in search_result:
-            keyboard = VkKeyboard()
-            full_name = f"{person['first_name']} {person['last_name']}"
-            url = f"https://vk.com/id{person['id']}"
-            photo_1 = f"https://vk.com/photo{person['id']}_{person['photos'][0]}"
-            photo_2 = f"https://vk.com/photo{person['id']}_{person['photos'][1]}"
-            photo_3 = f"https://vk.com/photo{person['id']}_{person['photos'][2]}"
-            
-            keyboard.add_openlink_button(full_name, url)
-            keyboard.add_button(next_person, red_key)
-            self.send_message(photo_1)
-            # если пользователь отправит ссылку на фото в чат, vK вставит в чат само фото,
-            # если ссылку на фото отправит чат бот, то зачастую фото не загружается вовсе, показывая лишь ссылку.
-            # Пауза повышает шанс успеха, но не гарантирует.
-            sleep(3)
-            self.send_message(photo_2)
-            sleep(3)
-            self.send_message(photo_3)
-            sleep(3)
-            self.send_message(f"{full_name.upper()}, {person['age']} лет \n \
-                                {url} \n \
-                                Нажмите на нужную кнопку внизу, чтобы открыть страницу пользователя \
-                                или посмотреть следующего. Ссылка на страницу сохранится здесь, в чате.", keyboard)
-            for event in self.longpoll.listen():
-                if event.type == VkEventType.MESSAGE_NEW and event.to_me:
-                    text = event.text
-                    if text == next_person:
-                        break
+            if self.user.check_account_id(person["id"]):
+                self.user.save_account_id(person["id"])
+                keyboard = VkKeyboard()
+                full_name = f"{person['first_name']} {person['last_name']}"
+                url = f"https://vk.com/id{person['id']}"
+                photo_1 = f"https://vk.com/photo{person['id']}_{person['photos'][0]}"
+                photo_2 = f"https://vk.com/photo{person['id']}_{person['photos'][1]}"
+                photo_3 = f"https://vk.com/photo{person['id']}_{person['photos'][2]}"
+                
+                keyboard.add_openlink_button(full_name, url)
+                keyboard.add_button(next_person, red_key)
+                self.send_message(photo_1)
+                sleep(1)
+                self.send_message(photo_2)
+                sleep(1)
+                self.send_message(photo_3)
+                sleep(1)
+                self.send_message(f"{full_name.upper()}, {person['age']} лет \n \
+                                    {url} \n \
+                                    Нажмите на нужную кнопку внизу, чтобы открыть страницу пользователя \
+                                    или посмотреть следующего. Ссылка на страницу сохранится здесь, в чате.", keyboard)
+                for event in self.longpoll.listen():
+                    if event.type == VkEventType.MESSAGE_NEW and event.to_me:
+                        text = event.text
+                        if text == next_person:
+                            break
 
 
 

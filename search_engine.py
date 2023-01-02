@@ -2,6 +2,7 @@ import vk_api
 from datetime import *   # используется в методе self.get_age()
 from data_base import DataBase
 from chat_bot import ChatBot
+from config import token
 
 
 class SearchEngine:
@@ -16,7 +17,7 @@ class SearchEngine:
                     # при втором вызове данные из первого вызова стёрлись бы.
         
 
-    def __init__(self, search_criterion, offset, user: DataBase):
+    def __init__(self, search_criterion, offset, count, user: DataBase):
         '''
         формирует параметры поиска аккаунтов Вк, на основе входных данных полученных от чат бота:
         search_criterion = {
@@ -26,12 +27,10 @@ class SearchEngine:
                         "age_to": max_age
                         }
         '''
-        with open("token.txt", 'r') as file:
-            self.token = file.read().strip()
         self.params = search_criterion
-        self.vk = vk_api.VkApi(token=self.token)
+        self.vk = vk_api.VkApi(token=token)
 
-        self.params["count"] = 10  # кол-во аккаунтов сколько надо найти
+        self.params["count"] = count  # кол-во аккаунтов сколько надо найти
         self.params["offset"] = offset  # сдвиг поиска, чтобы рез-ы не повторялись
         self.params["status"] = 6   # 6 - в активном поиске
         self.params["online"] = 1   # 1 - online, 0 - всех
