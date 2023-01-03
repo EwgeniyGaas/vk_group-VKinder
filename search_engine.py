@@ -1,13 +1,14 @@
 import vk_api
-from datetime import *   # используется в методе self.get_age()
-from data_base import DataBase
-from chat_bot import ChatBot
+from datetime import *   # используется в методе get_age()
+from data_base import DataBase # пользовательский тип данных
+from chat_bot import ChatBot # пользовательский тип данных
 from config import token
 
 
 class SearchEngine:
     '''
-    класс SearchEngine. Осуществляет поиск аккаунтов пользователей Вконтакте и их фотографий
+    класс SearchEngine. Осуществляет поиск аккаунтов пользователей Вконтакте
+    и их фотографий по заданным параметрам
     '''
 
     search_result = dict() # результат поиска, аккаунты соответствующие требованиям юзера
@@ -46,7 +47,7 @@ class SearchEngine:
         """
         вычисляет текущий возраст потенциальных партнёров,
         по разности между сегодняшней датой и датой их рождения.
-        Используется в методе self.select_accounts_with_access()
+        Вызывается в методе self.select_accounts_with_access()
         """
         today = datetime.date(datetime.today()) # сегодняшняя дата -> yyyy-mm-dd
         bdate = datetime.date(datetime.strptime(bdate_str, "%d.%m.%Y")) # преобразование даты рождения "dd.mm.yyyy" -> yyyy-mm-dd
@@ -59,6 +60,7 @@ class SearchEngine:
         '''
         Отбирает аккаунты с открытой для просмотра страницей.
         Формирует из них список -> [{'age': 18, 'first_name': 'Имя', 'id': 000000000 'last_name': 'Фамилия'}, {}]
+        Вызывается в методе self.search()
         '''
         for account in self.search_result["items"]:
             if account["can_access_closed"]:
@@ -71,12 +73,13 @@ class SearchEngine:
                 self.accounts_with_access.append(params)
             else:
                 pass
-
+        
 
     def get_photos(self, params):
         '''
         Получает id фотографий со страницы пользователя Вк и вычисляет рейтинг фото по кол-ву лайков и комментов
         -> [{'id': 111111111, 'rating': 11}, {'id': 222222222, 'rating': 22}]
+        Вызывается в методе self.search()
         '''    
         raw_photos = self.vk.method("photos.get", params)
         for photo in raw_photos["items"]:
@@ -90,6 +93,7 @@ class SearchEngine:
         '''
         Выбирает три фотографии с максимальным рейтингом, возвращает список их id
         -> [111111111, 222222222, 333333333]
+        Вызывается в методе self.search()
         '''
         three_photos = [0, 0, 0]
         rating_buffer = [0, 0, 0]
@@ -103,13 +107,16 @@ class SearchEngine:
 
     def search(self):
         """
-        Основная функция, запускает остальные методы класса.
+        Запускает остальные методы класса.
         Ищет аккаунты Вконтакте, в соответствии с параметрами запроса.
         Отбирает из них открытые для посещения страницы.
         Получает фотографии с найденных страниц, отбирает самые популярные по лайкам и комментам.
         Возвращает список с результатами работы в виде
         -> [{'age': 18, 'first_name': 'Имя', 'id': 00000000, 'last_name': 'Фамилия', 'photos': [1111111, 222222, 333333]}, {}]
+        Вызывается в main.py
         """
+        self.search_result = dict() # нужно обнулить, иначе данные сохраняются из предыдущего поиска
+        self.accounts_with_access = list() # нужно обнулить, иначе данные сохраняются из предыдущего поиска
 
         self.search_result = self.vk.method("users.search", self.params) # шаг 1. ищем профили соответствующие требованиям юзера
         self.select_accounts_with_access() # шаг 2. отбираем из них те, что с открытым доступом
@@ -130,24 +137,5 @@ class SearchEngine:
             account["photos"] = self.get_three_photos_with_max_rating() # шаг 4. определяем три фотки с максимальным рейтингом (кол-во лайков + комментов)
             self.photos = list() # удаляем данные, чтобы не перенеслись на следующего пользователя
         return self.accounts_with_access
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

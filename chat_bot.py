@@ -1,15 +1,16 @@
 import vk_api
 from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
-from random import randrange
-from time import sleep
-from data_base import DataBase
+from random import randrange # используется в методе send_message()
+from time import sleep # используется в методе listen()
+from data_base import DataBase # пользовательский тип данных
 from config import group_token
 
 
 class ChatBot:
     """
-    класс Чат Бот. Общается с юзером в чате группы вКонтакте.
+    класс ChatBot. Общается с юзером в чате группы вКонтакте.
+    Получает от юзера параметры поиска, выводит ему найденные результаты.
     """
 
     user_name = str()
@@ -33,9 +34,6 @@ class ChatBot:
     def send_message(self, message: str, keyboard = None):
         """
         Отправляет клавиатуру и сообщение юзеру в чат вКонтакте.
-        
-        (параметр user_id=self.user.id использует значение по умолчанию внутри методов класса ChatBot,
-        если вызывать этот метод извне, то нужно передавать значение user_id вручную)
         """
        
         params = {
@@ -54,6 +52,8 @@ class ChatBot:
     def set_user_data(self):
         """
         Автоматически получает данные о юзере из его аккаунта вКонтакте - имя, пол и город
+        И сохраняет их в переменные класса
+        Вызывается в методе self.listen()
         """
         
         params = {
@@ -71,6 +71,7 @@ class ChatBot:
         """
         Запрашивает у юзера желаемый возраст партнёра.
         Используется клавиатура с задаными в self.ages_step диапазонами
+        Вызывается в методе self.listen()
         """
         
         blue_key =  VkKeyboardColor.PRIMARY
@@ -87,6 +88,7 @@ class ChatBot:
     def set_age_for_search(self, text: str):
         """
         Сохраняет диапазон желаемого возраста партнёра для поиска
+        Вызывается в методе self.listen()
         """
         
         age = list()
@@ -106,6 +108,7 @@ class ChatBot:
     def set_partner_sex(self):
         """
         Сохраняет пол партнёра противоположный полу юзера
+        Вызывается в методе self.listen()
         """
         
         if self.user_sex == 1:
@@ -123,6 +126,7 @@ class ChatBot:
         Запрашивает у юзера город для поиска партнёра,
         по умолчанию предлагается город из профиля юзера,
         с возможностью указать другой город
+        Вызывается в методе self.listen()
         """
         
         blue_key =  VkKeyboardColor.PRIMARY
@@ -134,15 +138,16 @@ class ChatBot:
 
     def listen(self):
         """
-        Основная функция, запускает методы класса, расположенные выше её.
+        Запускает методы класса, расположенные выше её.
         Управляет чат ботом, обрабатывает сообщения юзера, отвечает ему,
-        запрашивает у юзера информацию
+        запрашивает у юзера информацию.
+        Вызывается в main.py
         """
 
         for event in self.longpoll.listen():
             if event.type == VkEventType.MESSAGE_NEW and event.to_me:
                 
-                self.user.set_id(event.user_id)
+                self.user.set_id(event.user_id) 
                 text = event.text.lower()
                 keyboard = VkKeyboard()
                 green_key = VkKeyboardColor.POSITIVE
@@ -184,8 +189,14 @@ class ChatBot:
 
             
     def present_results(self, search_result):
-        red_key = VkKeyboardColor.NEGATIVE
+        """
+        Выводит в чат пользователю найденную информацию (ссылки на три фотографии и на страницу потенциальной пары)
+        Вызывается в main.py
+        """
+        green_key = VkKeyboardColor.POSITIVE
+        blue_key =  VkKeyboardColor.PRIMARY
         next_person = "Следующий"
+        end_work = "Завершить сеанс"
                 
         for person in search_result:
             if self.user.check_account_id(person["id"]):
@@ -198,7 +209,9 @@ class ChatBot:
                 photo_3 = f"https://vk.com/photo{person['id']}_{person['photos'][2]}"
                 
                 keyboard.add_openlink_button(full_name, url)
-                keyboard.add_button(next_person, red_key)
+                keyboard.add_button(next_person, green_key)
+                keyboard.add_line()
+                keyboard.add_button(end_work, blue_key)
                 self.send_message(photo_1)
                 sleep(1)
                 self.send_message(photo_2)
@@ -214,37 +227,16 @@ class ChatBot:
                         text = event.text
                         if text == next_person:
                             break
+                        elif text == end_work:
+                            self.send_message(f"До свидания {self.user_name}, надеюсь мы смогли вам помочь :) !")
+                            return True
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
+    def no_result(self):
+        """
+        Выводит сообщение, что ничего не удаётся найти
+        Вызывается в main.py
+        """
+        self.send_message(f"К сожалению мы не смогли найти ничего подходящего :( \n \
+                            Напишите любое сообщение в чат если хотите изменить параметры поиска.")
+                            
 
