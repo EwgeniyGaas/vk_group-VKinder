@@ -16,7 +16,6 @@ class SearchEngine:
     photos = list() # все фотки полученные со страницы Вк. Объявлять локально в функции нельзя,
                     # потому что self.get_photo() вызывается 2 раза для каждого id,
                     # при втором вызове данные из первого вызова стёрлись бы.
-        
 
     def __init__(self, search_criterion, offset, count, user: DataBase):
         '''
@@ -40,8 +39,6 @@ class SearchEngine:
 
         bot = ChatBot(user)
         bot.send_message("Идёт поиск подходящих анкет. Нужно немного подождать.")
-        
-       
 
     def get_age(self, bdate_str: str) -> int:
         """
@@ -54,12 +51,12 @@ class SearchEngine:
         delta = str(today - bdate).split()  # кол-во дней с момента рождения -> ['365', 'days,', '0:00:00']
         age = int(int(delta[0]) // 365.25)
         return age
-    
 
     def select_accounts_with_access(self):
         '''
         Отбирает аккаунты с открытой для просмотра страницей.
-        Формирует из них список -> [{'age': 18, 'first_name': 'Имя', 'id': 000000000 'last_name': 'Фамилия'}, {}]
+        Формирует из них список ->
+        [{'age': 18, 'first_name': 'Имя', 'id': 000000000 'last_name': 'Фамилия'}, {}]
         Вызывается в методе self.search()
         '''
         for account in self.search_result["items"]:
@@ -73,11 +70,11 @@ class SearchEngine:
                 self.accounts_with_access.append(params)
             else:
                 pass
-        
-
+            
     def get_photos(self, params):
         '''
-        Получает id фотографий со страницы пользователя Вк и вычисляет рейтинг фото по кол-ву лайков и комментов
+        Получает id фотографий со страницы пользователя Вк
+        и вычисляет рейтинг фото по кол-ву лайков и комментов
         -> [{'id': 111111111, 'rating': 11}, {'id': 222222222, 'rating': 22}]
         Вызывается в методе self.search()
         '''    
@@ -87,7 +84,6 @@ class SearchEngine:
             current_photo["id"] = photo["id"]
             current_photo["rating"] = photo["likes"]["count"] + photo["comments"]["count"]
             self.photos.append(current_photo)
-
 
     def get_three_photos_with_max_rating(self):
         '''
@@ -104,15 +100,14 @@ class SearchEngine:
                 rating_buffer[index] = photo["rating"]
         return three_photos
 
-
     def search(self):
         """
         Запускает остальные методы класса.
         Ищет аккаунты Вконтакте, в соответствии с параметрами запроса.
         Отбирает из них открытые для посещения страницы.
         Получает фотографии с найденных страниц, отбирает самые популярные по лайкам и комментам.
-        Возвращает список с результатами работы в виде
-        -> [{'age': 18, 'first_name': 'Имя', 'id': 00000000, 'last_name': 'Фамилия', 'photos': [1111111, 222222, 333333]}, {}]
+        Возвращает список с результатами работы в виде ->
+        [{'age': 18, 'first_name': 'Имя', 'id': 00000000, 'last_name': 'Фамилия', 'photos': [1111111, 222222, 333333]}, {}]
         Вызывается в main.py
         """
         self.search_result = dict() # нужно обнулить, иначе данные сохраняются из предыдущего поиска

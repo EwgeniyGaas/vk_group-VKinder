@@ -1,6 +1,6 @@
-from config import DSN
 import sqlalchemy as sq
 from sqlalchemy.orm import declarative_base, sessionmaker
+from config import DSN
 
 Base = declarative_base()
 

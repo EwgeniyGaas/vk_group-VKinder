@@ -5,6 +5,7 @@ from search_engine import SearchEngine # пользовательский тип
 
 if __name__ == "__main__":
 
+
     while True:
         user = DataBase()
         bot = ChatBot(user)

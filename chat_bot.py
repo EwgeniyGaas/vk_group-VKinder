@@ -23,13 +23,11 @@ class ChatBot:
     max_age = 120
     is_check_point = False  # контроль, что пользователь следует сценарию, иначе начинаем заново
     ages_step = ["от 18 до 25", "от 26 до 35", "от 36 до 45", "от 46 до 55", "от 56 до 65", "от 66 и более"]  # индексы 0-5
-
     
     def __init__(self, user):
         self.vk = vk_api.VkApi(token=group_token)
         self.longpoll = VkLongPoll(self.vk)
         self.user = user # class DataBase
- 
 
     def send_message(self, message: str, keyboard = None):
         """
@@ -48,14 +46,13 @@ class ChatBot:
             params["keyboard"] = keyboard.get_empty_keyboard()
         self.vk.method("messages.send", params)
 
-
     def set_user_data(self):
         """
         Автоматически получает данные о юзере из его аккаунта вКонтакте - имя, пол и город
         И сохраняет их в переменные класса
         Вызывается в методе self.listen()
         """
-        
+
         params = {
             "user_ids": self.user.id,
             "fields": "sex, city"
@@ -65,7 +62,6 @@ class ChatBot:
         if self.user_city:
             self.user_city = user[0]["city"]["title"]
         self.user_sex = user[0]["sex"]
-
 
     def request_age_for_search(self, keyboard):
         """
@@ -83,7 +79,6 @@ class ChatBot:
         keyboard.add_button(self.ages_step[4], blue_key)
         keyboard.add_button(self.ages_step[5], blue_key)
         self.send_message("Выберите желаемый возраст", keyboard)
-
 
     def set_age_for_search(self, text: str):
         """
@@ -104,7 +99,6 @@ class ChatBot:
         else:
             self.max_age = age[1]
 
-
     def set_partner_sex(self):
         """
         Сохраняет пол партнёра противоположный полу юзера
@@ -119,7 +113,6 @@ class ChatBot:
             self.send_message("Ошибка. У вашего профиля не указан пол. \
                                 Укажите ваш пол в настройках аккаунта, \
                                 чтобы мы могли найти вам пару.")
-
 
     def set_partner_city(self, keyboard):
         """
@@ -187,7 +180,6 @@ class ChatBot:
                                             Давайте подберём Вам пару.\
                                             Нажмите кнопку {start_text} внизу, что-бы начать.", keyboard)
 
-            
     def present_results(self, search_result):
         """
         Выводит в чат пользователю найденную информацию (ссылки на три фотографии и на страницу потенциальной пары)
@@ -240,3 +232,4 @@ class ChatBot:
                             Напишите любое сообщение в чат если хотите изменить параметры поиска.")
                             
 
+s
