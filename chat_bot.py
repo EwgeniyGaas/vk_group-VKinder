@@ -5,6 +5,7 @@ from random import randrange # используется в методе send_mes
 from time import sleep # используется в методе listen()
 from data_base import DataBase # пользовательский тип данных
 from photo_sorter import PhotoSorter # пользовательский тип данных
+import common_function # пользовательская библиотека
 
 from config import group_token
 
@@ -16,15 +17,21 @@ class ChatBot:
     """
 
     user_name = str()
-    user_city = "Москва"
-    partner_city = "Москва"
+    user_city = "Москва" # по умолчанию будет город из аккаунта юзера. см. self.set_user_data()
+                         # Данное значение на случай, если в аккаунте юзера не указан родной город,
+                         # что-бы задать первое значение partner_city
+    partner_city = str() # по умолчанию равен user_city, с возможностью смены
     other_city = "Другой город"
+    user_bdate = int()  # дата рождения юзера
     user_sex = int()  # 0 - не указана, 1 - жен., 2 - муж.
     partner_sex = int()  # 1 - жен., 2 - муж.
+    male = "Я - парень/мужчина"
+    female = "Я - девушка/женщина"
     min_age = 18
     max_age = 120
     is_check_point = False  # контроль, что пользователь следует сценарию, иначе начинаем заново
     ages_step = ["от 18 до 25", "от 26 до 35", "от 36 до 45", "от 46 до 55", "от 56 до 65", "от 66 и более"]  # индексы 0-5
+    about_user_age = str() # надпись на кнопку - поиск партнёров примерно возраста юзера
     
     def __init__(self, user):
         self.vk = vk_api.VkApi(token=group_token)
@@ -57,22 +64,34 @@ class ChatBot:
 
         params = {
             "user_ids": self.user.id,
-            "fields": "sex, city"
+            "fields": "sex, city, bdate"
             }
         user = self.vk.method("users.get", params)
         self.user_name = user[0]["first_name"]
+        self.user_bdate = user[0]["bdate"]
         if self.user_city:
             self.user_city = user[0]["city"]["title"]
         self.user_sex = user[0]["sex"]
 
     def request_age_for_search(self, keyboard):
         """
-        Запрашивает у юзера желаемый возраст партнёра.
+        Запрашивает у юзера желаемый возраст партнёра. 
         Используется клавиатура с задаными в self.ages_step диапазонами
+        Плюс кнопка с возрастами в районе возраста юзера
         Вызывается в методе self.listen()
         """
+        user_age = common_function.get_age(self.user_bdate)
+        min_age = user_age - 5
+        max_age = user_age + 5
+        if min_age < 18:
+            min_age = 18
+        self.about_user_age = f"Примерно моего возраста: от {min_age} до {max_age} лет"
         
+        green_key = VkKeyboardColor.POSITIVE
         blue_key =  VkKeyboardColor.PRIMARY
+        
+        keyboard.add_button(self.about_user_age, green_key)
+        keyboard.add_line()
         keyboard.add_button(self.ages_step[0], blue_key)
         keyboard.add_button(self.ages_step[1], blue_key)
         keyboard.add_button(self.ages_step[2], blue_key)
@@ -104,6 +123,7 @@ class ChatBot:
     def set_partner_sex(self):
         """
         Сохраняет пол партнёра противоположный полу юзера
+        1 - жен., 2 - муж.
         Вызывается в методе self.listen()
         """
         
@@ -111,10 +131,13 @@ class ChatBot:
             self.partner_sex = 2
         elif self.user_sex == 2:
             self.partner_sex = 1
-        else:
-            self.send_message("Ошибка. У вашего профиля не указан пол. \
-                                Укажите ваш пол в настройках аккаунта, \
-                                чтобы мы могли найти вам пару.")
+
+    def get_user_sex(self, keyboard):
+        blue_key =  VkKeyboardColor.PRIMARY
+        keyboard.add_button(self.male, blue_key)
+        keyboard.add_button(self.female, blue_key)
+        self.send_message(f"Укажите, какого Вы пола, нажав на соответствующую \
+                            кнопку внизу.", keyboard)
 
     def set_partner_city(self, keyboard):
         """
@@ -148,12 +171,22 @@ class ChatBot:
                 green_key = VkKeyboardColor.POSITIVE
                 start_text = "СТАРТ" # надпись на стартовой кнопке
 
-                if text == start_text.lower(): # шаг 2. Юзер выбирает возраст партнёра
-                    self.request_age_for_search(keyboard)
-                    
-                elif text in self.ages_step: # шаг 3.1 Присваиваим возраст и пол. Уточняем город поиска
-                    self.set_age_for_search(text)
+                if text == start_text.lower(): # шаг 2. Устанавливаем пол партнёра и запрашиваем возраст
+                    if not self.user_sex: # если пол в профиле не был указан. подшаг 1
+                        self.get_user_sex(keyboard)
+                    else:                 # если пол в профиле указан
+                        self.set_partner_sex()
+                        self.request_age_for_search(keyboard)
+                elif text == self.male.lower() or text == self.female.lower():  # если пол в профиле не был указан. подшаг 2 
+                    if text == self.female.lower():
+                        self.user_sex = 1  # 1 - жен., 2 - муж.
+                    else:
+                        self.user_sex = 2
                     self.set_partner_sex()
+                    self.request_age_for_search(keyboard)
+
+                elif (text in self.ages_step) or (text == self.about_user_age.lower()): # шаг 3.1 Присваиваим возраст. Уточняем город поиска
+                    self.set_age_for_search(text)
                     self.partner_city = self.user_city
                     self.set_partner_city(keyboard)
                     

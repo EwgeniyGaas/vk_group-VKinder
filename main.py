@@ -13,7 +13,7 @@ if __name__ == "__main__":
         search_criterion = bot.listen()
 
         offset = 0 # сдвиг поиска, чтобы результаты не повторялись
-        count = 1 # кол-во аккаунтовов в результатах
+        count = 100 # кол-во аккаунтовов в результатах
         end_work = False
         counter_no_result = 0
         

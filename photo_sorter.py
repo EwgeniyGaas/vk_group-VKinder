@@ -65,5 +65,5 @@ class PhotoSorter:
             }
         self.get_photos(params_wall)  # шаг 2 получаем список фотографий со стены + кол-во лайков + кол-во комментов
         three_photos_id = self.get_three_photos_with_max_rating()  # шаг 3. определяем три фотки с максимальным рейтингом (кол-во лайков + комментов)
-        print(three_photos_id)                  #  ВРЕМЕННО
+
         return three_photos_id

@@ -1,7 +1,7 @@
 import vk_api
-from datetime import *   # используется в методе get_age()
 from data_base import DataBase # пользовательский тип данных
 from chat_bot import ChatBot # пользовательский тип данных
+import common_function # пользовательская библиотека
 from config import token
 
 
@@ -37,18 +37,6 @@ class SearchEngine:
         bot = ChatBot(user)
         bot.send_message("Идёт поиск подходящих анкет. Нужно немного подождать.")
 
-    def get_age(self, bdate_str: str) -> int:
-        """
-        вычисляет текущий возраст потенциальных партнёров,
-        по разности между сегодняшней датой и датой их рождения.
-        Вызывается в методе self.select_accounts_with_access()
-        """
-        today = datetime.date(datetime.today()) # сегодняшняя дата -> yyyy-mm-dd
-        bdate = datetime.date(datetime.strptime(bdate_str, "%d.%m.%Y")) # преобразование даты рождения "dd.mm.yyyy" -> yyyy-mm-dd
-        delta = str(today - bdate).split()  # кол-во дней с момента рождения -> ['365', 'days,', '0:00:00']
-        age = int(int(delta[0]) // 365.25)
-        return age
-
     def select_accounts_with_access(self):
         '''
         Отбирает аккаунты с открытой для просмотра страницей.
@@ -62,7 +50,7 @@ class SearchEngine:
                     "id": account["id"],
                     "first_name": account["first_name"],
                     "last_name": account["last_name"],
-                    "age": self.get_age(account["bdate"])
+                    "age": common_function.get_age(account["bdate"])
                     }                
                 self.accounts_with_access.append(params)
             else:
