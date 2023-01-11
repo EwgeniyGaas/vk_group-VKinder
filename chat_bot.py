@@ -4,6 +4,8 @@ from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from random import randrange # используется в методе send_message()
 from time import sleep # используется в методе listen()
 from data_base import DataBase # пользовательский тип данных
+from photo_sorter import PhotoSorter # пользовательский тип данных
+
 from config import group_token
 
 
@@ -189,16 +191,18 @@ class ChatBot:
         blue_key =  VkKeyboardColor.PRIMARY
         next_person = "Следующий"
         end_work = "Завершить сеанс"
+        photo_sorter = PhotoSorter()
                 
         for person in search_result:
             if self.user.check_account_id(person["id"]):
                 self.user.save_account_id(person["id"])
+                three_photos_id = photo_sorter.select_photos(person["id"])  # -> [1111111, 222222, 333333]
                 keyboard = VkKeyboard()
                 full_name = f"{person['first_name']} {person['last_name']}"
                 url = f"https://vk.com/id{person['id']}"
-                photo_1 = f"https://vk.com/photo{person['id']}_{person['photos'][0]}"
-                photo_2 = f"https://vk.com/photo{person['id']}_{person['photos'][1]}"
-                photo_3 = f"https://vk.com/photo{person['id']}_{person['photos'][2]}"
+                photo_1 = f"https://vk.com/photo{person['id']}_{three_photos_id[0]}"
+                photo_2 = f"https://vk.com/photo{person['id']}_{three_photos_id[1]}"
+                photo_3 = f"https://vk.com/photo{person['id']}_{three_photos_id[2]}"
                 
                 keyboard.add_openlink_button(full_name, url)
                 keyboard.add_button(next_person, green_key)
