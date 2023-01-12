@@ -23,11 +23,14 @@ class PhotoSorter:
         Вызывается в методе self.select_photos()
         '''    
         raw_photos = self.vk.method("photos.get", params)
-        for photo in raw_photos["items"]:
-            current_photo = dict()
-            current_photo["id"] = photo["id"]
-            current_photo["rating"] = photo["likes"]["count"] + photo["comments"]["count"]
-            self.photos.append(current_photo)
+        try:
+            for photo in raw_photos["items"]:
+                current_photo = dict()
+                current_photo["id"] = photo["id"]
+                current_photo["rating"] = photo["likes"]["count"] + photo["comments"]["count"]
+                self.photos.append(current_photo)
+        except: # обработано в методе self.get_three_photos_with_max_rating()
+            pass
 
     def get_three_photos_with_max_rating(self):
         '''
@@ -37,11 +40,14 @@ class PhotoSorter:
         '''
         three_photos = [0, 0, 0]
         rating_buffer = [0, 0, 0]
-        for photo in self.photos:
-            if photo["rating"] > min(rating_buffer):
-                index = rating_buffer.index(min(rating_buffer))
-                three_photos[index] = photo["id"]
-                rating_buffer[index] = photo["rating"]
+        if self.photos: # если метод self.get_photos() отработал без ошибки и вернул данные
+            for photo in self.photos:
+                if photo["rating"] > min(rating_buffer):
+                    index = rating_buffer.index(min(rating_buffer))
+                    three_photos[index] = photo["id"]
+                    rating_buffer[index] = photo["rating"]
+        else:
+            three_photos = []
         return three_photos
 
     def select_photos(self, account_id):

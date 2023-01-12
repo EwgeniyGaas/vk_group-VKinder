@@ -44,17 +44,20 @@ class SearchEngine:
         [{'age': 18, 'first_name': 'Имя', 'id': 000000000 'last_name': 'Фамилия'}, {}]
         Вызывается в методе self.search()
         '''
-        for account in self.search_result["items"]:
-            if account["can_access_closed"]:
-                params = {
-                    "id": account["id"],
-                    "first_name": account["first_name"],
-                    "last_name": account["last_name"],
-                    "age": common_function.get_age(account["bdate"])
-                    }                
-                self.accounts_with_access.append(params)
-            else:
-                pass
+        try:
+            for account in self.search_result["items"]:
+                if account["can_access_closed"]:
+                    params = {
+                        "id": account["id"],
+                        "first_name": account["first_name"],
+                        "last_name": account["last_name"],
+                        "age": common_function.get_age(account["bdate"])  # вернёт число лет, либо пустую строку
+                        }                
+                    self.accounts_with_access.append(params)
+                else:
+                    pass
+        except:  # отсутствие результатов обработано в файле main.py
+            pass
 
     def search(self):
         """
@@ -71,7 +74,7 @@ class SearchEngine:
         self.search_result = self.vk.method("users.search", self.params) # шаг 1. ищем профили соответствующие требованиям юзера
         self.select_accounts_with_access() # шаг 2. отбираем из них те, что с открытым доступом
    
-        return self.accounts_with_access
+        return self.accounts_with_access # отсутствие результатов обработано в файле main.py
 
 
 

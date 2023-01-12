@@ -16,22 +16,23 @@ class ChatBot:
     Получает от юзера параметры поиска, выводит ему найденные результаты.
     """
 
-    user_name = str()
+    user_name = "друг"   # по умолчанию будет имя юзера, данное значение на случай сбоя
     user_city = "Москва" # по умолчанию будет город из аккаунта юзера. см. self.set_user_data()
                          # Данное значение на случай, если в аккаунте юзера не указан родной город,
                          # что-бы задать первое значение partner_city
-    partner_city = str() # по умолчанию равен user_city, с возможностью смены
+    partner_city = str() # по умолчанию равен user_city, с возможностью смены юзером
     other_city = "Другой город"
-    user_bdate = int()  # дата рождения юзера
-    user_sex = int()  # 0 - не указана, 1 - жен., 2 - муж.
+    user_bdate = str()   # дата рождения юзера
+    user_sex = 0         # 0 - не указана, 1 - жен., 2 - муж.
     partner_sex = int()  # 1 - жен., 2 - муж.
     male = "Я - парень/мужчина"
     female = "Я - девушка/женщина"
     min_age = 18
     max_age = 120
     is_check_point = False  # контроль, что пользователь следует сценарию, иначе начинаем заново
+    date_error = False           # ошибка получения данных через api
     ages_step = ["от 18 до 25", "от 26 до 35", "от 36 до 45", "от 46 до 55", "от 56 до 65", "от 66 и более"]  # индексы 0-5
-    about_user_age = str() # надпись на кнопку - поиск партнёров примерно возраста юзера
+    about_user_age = str()  # подпись на кнопку -- поиск партнёров примерно возраста юзера
     
     def __init__(self, user):
         self.vk = vk_api.VkApi(token=group_token)
@@ -67,11 +68,15 @@ class ChatBot:
             "fields": "sex, city, bdate"
             }
         user = self.vk.method("users.get", params)
-        self.user_name = user[0]["first_name"]
-        self.user_bdate = user[0]["bdate"]
-        if self.user_city:
+        # отсутствие значений будут обработаны далее, при использовании
+        if "first_name" in user[0]:
+            self.user_name = user[0]["first_name"]
+        if "bdate" in user[0]:
+            self.user_bdate = user[0]["bdate"]
+        if "city" in user[0] and "title" in user[0]["city"]:
             self.user_city = user[0]["city"]["title"]
-        self.user_sex = user[0]["sex"]
+        if "sex" in user[0]:
+            self.user_sex = user[0]["sex"]
 
     def request_age_for_search(self, keyboard):
         """
@@ -80,18 +85,23 @@ class ChatBot:
         Плюс кнопка с возрастами в районе возраста юзера
         Вызывается в методе self.listen()
         """
-        user_age = common_function.get_age(self.user_bdate)
-        min_age = user_age - 5
-        max_age = user_age + 5
-        if min_age < 18:
-            min_age = 18
-        self.about_user_age = f"Примерно моего возраста: от {min_age} до {max_age} лет"
-        
-        green_key = VkKeyboardColor.POSITIVE
+        user_age = common_function.get_age(self.user_bdate) # вернёт число лет, либо пустую строку
+        try:
+            int(user_age) # проверка, что вернулась не пустая строка
+            min_age = user_age - 5
+            max_age = user_age + 5
+            if min_age < 18:
+                min_age = 18
+            self.about_user_age = f"Примерно моего возраста: от {min_age} до {max_age} лет"
+            
+            green_key = VkKeyboardColor.POSITIVE
+            keyboard.add_button(self.about_user_age, green_key)
+            keyboard.add_line()
+        except:
+            pass
+            
         blue_key =  VkKeyboardColor.PRIMARY
         
-        keyboard.add_button(self.about_user_age, green_key)
-        keyboard.add_line()
         keyboard.add_button(self.ages_step[0], blue_key)
         keyboard.add_button(self.ages_step[1], blue_key)
         keyboard.add_button(self.ages_step[2], blue_key)
@@ -106,19 +116,21 @@ class ChatBot:
         Сохраняет диапазон желаемого возраста партнёра для поиска
         Вызывается в методе self.listen()
         """
-        
-        age = list()
-        for value in text.split():
-            try:
-                age.append(int(value))
-            except ValueError:
-                pass
+        try:
+            age = list()
+            for value in text.split():
+                try:
+                    age.append(int(value))
+                except ValueError:
+                    pass
             
-        self.min_age = age[0]
-        if len(age) == 1:
-            self.max_age = 120;
-        else:
-            self.max_age = age[1]
+            self.min_age = age[0]
+            if len(age) == 1:
+                self.max_age = 120;
+            else:
+                self.max_age = age[1]
+        except:
+            self.date_error = True
 
     def set_partner_sex(self):
         """
@@ -131,8 +143,14 @@ class ChatBot:
             self.partner_sex = 2
         elif self.user_sex == 2:
             self.partner_sex = 1
+        else:
+            self.date_error = True
 
     def get_user_sex(self, keyboard):
+        """
+        Запрашивает пол у пользователя.
+        Вызывается в методе self.listen(), если в профиле не был указан пол
+        """
         blue_key =  VkKeyboardColor.PRIMARY
         keyboard.add_button(self.male, blue_key)
         keyboard.add_button(self.female, blue_key)
@@ -171,7 +189,14 @@ class ChatBot:
                 green_key = VkKeyboardColor.POSITIVE
                 start_text = "СТАРТ" # надпись на стартовой кнопке
 
-                if text == start_text.lower(): # шаг 2. Устанавливаем пол партнёра и запрашиваем возраст
+                if self.date_error:  #  Если возникнет ошибка при обработке данных
+                    self.date_error = False
+                    self.is_check_point = False
+                    keyboard.add_button(start_text, green_key)
+                    self.send_message("Что-то пошло не так, возможно не загрузились данные из интернета.\n \
+                                      Проверьте своё интернет-соединение и попробуйте заново", keyboard)
+
+                elif text == start_text.lower(): # шаг 2. Устанавливаем пол партнёра и запрашиваем возраст
                     if not self.user_sex: # если пол в профиле не был указан. подшаг 1
                         self.get_user_sex(keyboard)
                     else:                 # если пол в профиле указан
@@ -203,7 +228,7 @@ class ChatBot:
                         "age_to": self.max_age
                         }
                     return search_criterion
-                
+
                 else:
                     if self.is_check_point:  # шаг 3.3 Сохранение другого города, введённого пользователем
                         self.partner_city = event.text
@@ -215,11 +240,16 @@ class ChatBot:
                                             Давайте подберём Вам пару.\
                                             Нажмите кнопку {start_text} внизу, что-бы начать.", keyboard)
 
+
+    """************************************************************************************"""
+
+
     def present_results(self, search_result):
         """
         Выводит в чат пользователю найденную информацию (ссылки на три фотографии и на страницу потенциальной пары)
         Вызывается в main.py
         """
+        
         green_key = VkKeyboardColor.POSITIVE
         blue_key =  VkKeyboardColor.PRIMARY
         next_person = "Следующий"
@@ -250,21 +280,27 @@ class ChatBot:
                 self.send_message(f"{full_name.upper()}, {person['age']} лет \n \
                                     {url} \n \
                                     Нажмите на нужную кнопку внизу, чтобы открыть страницу пользователя \
-                                    или посмотреть следующего. Ссылка на страницу сохранится здесь, в чате.", keyboard)
+                                    или посмотреть следующего. \nСсылка на страницу сохранится здесь, в чате.\n \
+                                    Если хотите изменить параметры поиска, нажмите на кнопку '{end_work}'.", keyboard)
                 for event in self.longpoll.listen():
                     if event.type == VkEventType.MESSAGE_NEW and event.to_me:
                         text = event.text
                         if text == next_person:
                             break
                         elif text == end_work:
-                            self.send_message(f"До свидания {self.user_name}, надеюсь мы смогли вам помочь :) !")
+                            self.send_message(f"До свидания {self.user_name}, надеюсь мы смогли вам помочь :) !\n \
+                                                Вы можете в любой момент продолжить, просто напишите любое сообщение \
+                                                в чат и мы ответим.")
                             return True
+                        else: # если юзер напишет сообщение в чат, вместо нажатия кнопок, программа выведет следующий найденный аккаунт
+                            break
 
     def no_result(self):
         """
         Выводит сообщение, что ничего не удаётся найти
         Вызывается в main.py
         """
+        
         self.send_message(f"К сожалению мы не смогли найти ничего подходящего :( \n \
                             Напишите любое сообщение в чат если хотите изменить параметры поиска.")
                             

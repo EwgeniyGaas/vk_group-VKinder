@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
             if not search_result:
                 counter_no_result += 1
-                if counter_no_result == 5:
+                if counter_no_result == 3:
                     bot.no_result()
                     end_work = True
             else:
